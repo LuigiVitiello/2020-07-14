@@ -7,7 +7,9 @@ package it.polito.tdp.PremierLeague;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.PremierLeague.model.Adiacenza;
 import it.polito.tdp.PremierLeague.model.Model;
+import it.polito.tdp.PremierLeague.model.Team;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -35,7 +37,7 @@ public class FXMLController {
     private Button btnSimula; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbSquadra"
-    private ComboBox<?> cmbSquadra; // Value injected by FXMLLoader
+    private ComboBox<Team> cmbSquadra; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtN"
     private TextField txtN; // Value injected by FXMLLoader
@@ -49,16 +51,64 @@ public class FXMLController {
     @FXML
     void doClassifica(ActionEvent event) {
 
+    	this.txtResult.clear();
+    	if(this.cmbSquadra.getValue().equals(null)) {
+    		this.txtResult.setText("Scegli un team");
+    		return ;
+    	}
+    	if(this.model.getVertici()==null) {
+    		this.txtResult.setText("Creare prima il grafo");
+    		return ;
+    	}
+    	this.model.doClassifica(this.cmbSquadra.getValue());
+    	
+    	this.txtResult.appendText("\nSQUADRE MIGLIORI: \n");
+    	for(Adiacenza a : this.model.getMigliori()) {
+    		this.txtResult.appendText(a.getT1().toString()+"["+a.getDifferenza()+"]\n");
+    	}
+    	
+    	this.txtResult.appendText("\nSQUADRE PEGGIORI: \n");
+    	for(Adiacenza a : this.model.getPeggiori()) {
+    		this.txtResult.appendText(a.getT2().toString()+"["+a.getDifferenza()+"]\n");
+    	}
+
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
 
+    	this.model.creaGrafo();
+    	this.txtResult.setText("Grafo creato\n #vertici: "+this.model.nVertici()+"\n# Archi: "+this.model.nArchi());
+    	
+    	this.cmbSquadra.getItems().addAll(this.model.getVertici());
     }
 
     @FXML
     void doSimula(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	if(this.model.getVertici()==null) {
+    		this.txtResult.setText("Creare prima il grafo");
+    		return ;
+    	}
+    	int N;
+    	try {
+    		N = Integer.parseInt(this.txtN.getText());
+    	}catch(NumberFormatException ne) {
+    		ne.printStackTrace();
+    		return ;
+    	}
+    	
+    	int X;
+    	try {
+    		X = Integer.parseInt(this.txtX.getText());
+    	}catch(NumberFormatException ne) {
+    		ne.printStackTrace();
+    		return ;
+    	}
+    	
+    	this.model.simula(N, X);
+    	this.txtResult.appendText("Media Reporter: "+this.model.getMedia());
+    	this.txtResult.appendText("\nPartite inferiori a X: "+this.model.getInf());
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete

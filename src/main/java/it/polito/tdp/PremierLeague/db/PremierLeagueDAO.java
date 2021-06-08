@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
@@ -36,9 +38,8 @@ public class PremierLeagueDAO {
 		}
 	}
 	
-	public List<Team> listAllTeams(){
+	public void listAllTeams(Map<Integer,Team> idMap){
 		String sql = "SELECT * FROM Teams";
-		List<Team> result = new ArrayList<Team>();
 		Connection conn = DBConnect.getConnection();
 
 		try {
@@ -46,15 +47,17 @@ public class PremierLeagueDAO {
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
 
+				if(!idMap.containsKey(res.getInt("TeamID"))) {
 				Team team = new Team(res.getInt("TeamID"), res.getString("Name"));
-				result.add(team);
+				idMap.put(res.getInt("TeamID"), team);
+				}
 			}
 			conn.close();
-			return result;
+
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return null;
+
 		}
 	}
 	
@@ -84,7 +87,7 @@ public class PremierLeagueDAO {
 	}
 	
 	public List<Match> listAllMatches(){
-		String sql = "SELECT m.MatchID, m.TeamHomeID, m.TeamAwayID, m.teamHomeFormation, m.teamAwayFormation, m.resultOfTeamHome, m.date, t1.Name, t2.Name   "
+		String sql = "SELECT m.MatchID, m.TeamHomeID, m.TeamAwayID, m.teamHomeFormation, m.teamAwayFormation, m.resultOfTeamHome, m.date, t1.Name, t2.Name "
 				+ "FROM Matches m, Teams t1, Teams t2 "
 				+ "WHERE m.TeamHomeID = t1.TeamID AND m.TeamAwayID = t2.TeamID";
 		List<Match> result = new ArrayList<Match>();
@@ -109,6 +112,54 @@ public class PremierLeagueDAO {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+	
+	public int punteggioVittorie(Team t){
+		String sql = "SELECT COUNT(*)*3 AS punteggio "
+				+ "FROM matches m "
+				+ "WHERE (m.TeamHomeID = ? AND  m.ResultOfTeamHome=1) OR (m.TeamAwayID = ? AND  m.ResultOfTeamHome=-1)";
+		int punteggio=0;
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, t.getTeamID());
+			st.setInt(2, t.getTeamID());
+			ResultSet res = st.executeQuery();
+			if(res.next()) {
+				punteggio = res.getInt("punteggio");
+			}
+			conn.close();
+			return punteggio;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+	
+	public int punteggioPareggi(Team t){
+		String sql = "SELECT COUNT(*) AS punteggio "
+				+ "FROM matches m "
+				+ "WHERE  (m.TeamHomeID = ? AND  m.ResultOfTeamHome=0) OR (m.TeamAwayID =? AND  m.ResultOfTeamHome=0)";
+		int punteggio=0;
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, t.getTeamID());
+			st.setInt(2, t.getTeamID());
+			ResultSet res = st.executeQuery();
+			if(res.next()) {
+				punteggio = res.getInt("punteggio");
+			}
+			conn.close();
+			return punteggio;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
 		}
 	}
 	
